@@ -1,4 +1,3 @@
-from typing import Tuple
 import cv2
 import numpy as np
 import rclpy
@@ -7,7 +6,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 
 
-class ImageProcessor(Node):
+class ImageProcessingNode(Node):
     """
     ROS 2 node for image processing operations including distortion removal and ROI cropping.
 
@@ -20,7 +19,7 @@ class ImageProcessor(Node):
     """
 
     def __init__(self):
-        super().__init__("image_processor")
+        super().__init__("image_processing_node")
 
         # Initialize CV Bridge
         self.bridge = CvBridge()
@@ -86,7 +85,7 @@ class ImageProcessor(Node):
             )
 
             # Get optimal new camera matrix
-            new_camera_matrix = cv2.getOptimalNewCameraMatrix(
+            new_camera_matrix, self.undistortion_roi = cv2.getOptimalNewCameraMatrix(
                 self.camera_matrix,
                 self.distortion_coefficients,
                 (self.image_width, self.image_height),
@@ -126,7 +125,9 @@ class ImageProcessor(Node):
         undistorted_image = cv2.remap(
             image, self.map1, self.map2, cv2.INTER_LINEAR
         )
-        return undistorted_image
+        x, y, w, h = self.undistortion_roi
+
+        return undistorted_image[y:y+h, x:x+w]
 
     def crop_roi(self, image: np.ndarray) -> np.ndarray:
         """
@@ -193,17 +194,15 @@ def main(args=None):
     """Main function to initialize and run the image processor node."""
     rclpy.init(args=args)
 
-    try:
-        image_processor = ImageProcessor()
-        rclpy.spin(image_processor)
-    except KeyboardInterrupt:
-        pass
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        if "image_processor" in locals():
-            image_processor.destroy_node()
-        rclpy.shutdown()
+    image_processor = ImageProcessingNode()
+    rclpy.spin(image_processor)
+
+
+    # Destroy the node explicitly
+    # (optional - otherwise it will be done automatically
+    # when the garbage collector destroys the node object)
+    image_processor.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == "__main__":

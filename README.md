@@ -34,6 +34,15 @@ cd /path/to/image_processing_node
 docker build -t image_processing_node .
 ```
 
+Publishing to Docker repo:
+```
+docker buildx build \
+  --platform linux/arm64/v8 \
+  -t mykingdomisabsolute/open_finder_bot_image_processing_node:latest \
+  --push \
+  .
+```
+
 ### Run with Docker
 
 ```bash
@@ -56,6 +65,13 @@ docker run --rm -it \
 ### Parameter File
 
 The node expects camera calibration parameters to be provided via the `camera_info` topic. ROI parameters are extracted from the CameraInfo message's ROI field.
+
+## Testing
+
+On the src folder inside a DevContainer:
+  - source /opt/ros/${ROS_DISTRO}/setup.sh
+  - colcon build && . install/setup.bash
+  - colcon test --event-handlers console_cohesion+ --packages-select image_processing_node
 
 ## License
 
